@@ -28,18 +28,12 @@ class model:
         self.num_feat=1
         self.num_labels=1
         self.is_trained=False
-        self.mod = GaussianNB()
+        self.mod = RandomForestClassifier(n_estimators=180, max_depth=18, min_samples_split=4, max_features=40, class_weight="auto", n_jobs=2)
+ 
     
     def define_model(self, name):
-        if self.is_trained == False:
-            if name == 'GaussianNB':
-                self.mod = GaussianNB()
-            else:
-                print('Error selecting the model, choose by default Gaussian NB')
-                self.mod = GaussianNB()
-        else:
-            print("Model already load")
-        
+		print("Model already load")
+     
     def fit(self, X, Y):
         '''
         This function should train the model parameters.
