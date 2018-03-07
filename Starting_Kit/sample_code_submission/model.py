@@ -11,12 +11,16 @@ import numpy as np   # We recommend to use numpy arrays
 from os.path import isfile
 import sklearn
 
+from zPreprocessor import SimpleTransform
+
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.cluster import  KMeans
 from sklearn.naive_bayes import GaussianNB
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.neural_network import MLPClassifier
+from sklearn.pipeline import Pipeline
 
 class model:
     def __init__(self):
@@ -28,12 +32,14 @@ class model:
         self.num_feat=1
         self.num_labels=1
         self.is_trained=False
-        self.mod = RandomForestClassifier(n_estimators=180, max_depth=18, min_samples_split=4, max_features=40, class_weight="auto", n_jobs=2)
- 
+        self.mod = Pipeline([
+                ('preprocessing', SimpleTransform()),
+                ('classification', MLPClassifier((256, 256), activation="tanh", solver="adam", alpha=1e-6, batch_size = 128, verbose=True))])
+
     
     def define_model(self, name):
-		print("Model already load")
-     
+        print("Model already load")
+        
     def fit(self, X, Y):
         '''
         This function should train the model parameters.
