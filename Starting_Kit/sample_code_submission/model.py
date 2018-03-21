@@ -13,12 +13,6 @@ import sklearn
 
 from zPreprocessor import SimpleTransform
 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.cluster import  KMeans
-from sklearn.naive_bayes import GaussianNB
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 
@@ -34,11 +28,22 @@ class model:
         self.is_trained=False
         self.mod = Pipeline([
                 ('preprocessing', SimpleTransform()),
-                ('classification', MLPClassifier((256, 256), activation="tanh", solver="adam", alpha=1e-6, batch_size = 128, verbose=True))])
+                ('classification', MLPClassifier((256, 256), activation="tanh", max_iter=8, solver="adam", alpha=1e-6, batch_size = 128, verbose=True))])
 
+        np.random.seed(0)
+        self.pairs = np.dstack((np.random.randint(256, size=768), np.random.randint(256, size=768)))[0]
+        print(self.pairs)
+        print(self.pairs.shape)
     
     def define_model(self, name):
         print("Model already load")
+       
+
+    def augment_data(self, X):
+        new_x = np.zeros((X.shape[0], X.shape[1]+768))
+        new_x[:,:256] = X
+        new_x[:,256:] = X[:,self.pairs[:,0]] * X[:,self.pairs[:,1]]
+        return new_x
         
     def fit(self, X, Y):
         '''
@@ -54,6 +59,8 @@ class model:
         Use data_converter.convert_to_num() to convert to the category number format.
         For regression, labels are continuous values.
         '''
+        print("Shape is ", X.shape)
+        X = self.augment_data(X)
         # For multi-class problems, convert target to be scikit-learn compatible
         # into one column of a categorical variable
         y=self.convert_to_num(Y, verbose=False)     
@@ -66,7 +73,7 @@ class model:
         print("FIT: dim(y)= [{:d}, {:d}]".format(num_train_samples, self.num_labels))
         if (self.num_train_samples != num_train_samples):
             print("ARRGH: number of samples in X and y do not match!")
-
+        
         self.mod.fit(X, y)
         self.is_trained=True
 
@@ -82,6 +89,7 @@ class model:
         Scikit-learn also has a function predict-proba, we do not require it.
         The function predict eventually can return probabilities.
         '''
+        X = self.augment_data(X)
         num_test_samples = X.shape[0]
         if X.ndim>1: num_feat = X.shape[1]
         print("PREDICT: dim(X)= [{:d}, {:d}]".format(num_test_samples, num_feat))
