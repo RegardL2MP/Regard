@@ -30,28 +30,46 @@ class SimpleTransform(BaseEstimator):
 in X], ndmin=2).T 
 
 # Pour nettoyer le dataset des entrées incomplètes, INUTILE toutes les données sont completes
-def nettoyer_bdd(dataset):
+def nettoyer_bdd(dataset, num_f):
     #on fait une copie de la liste pour éviter de modifier la liste de base
         
     c = 0
     cleaned_list = list(dataset)
-    for i in range(len(cleaned_list)):
-        si il y a moins de 256 features alors le dataset est incomplète
-        if(len(cleaned_list[i]) != 256):
+    print(len(cleaned_list), len(dataset))
+    i = 0
+    while i < len(cleaned_list):
+        #si il y a moins de 256 features alors le dataset est incomplète
+        if(len(cleaned_list[i]) != num_f):
             c+=1
             #donc on retire de notre liste l'entrée incriminée
             cleaned_list.pop(i)
+            i -= 1
+        i += 1
     
-    rotate = list(zip(*reversed(cleaned_list)))      
-    bleached_list = []
+    #tourne la liste, plus facile pour verifier la présence de colonnes de zeros
+    #retourne une liste de tuple; du coup on les transforme en listes avec unpack_Tuple
+    rotate = list(zip(*reversed(cleaned_list)))
+    unpack_Tuple(rotate)
+    print(rotate)
+        
+    
+    bleached_list = []    
     
     for i in range(len(rotate)):
         if(rotate[i] != len(rotate[i]) * [0]):
             bleached_list.append(rotate[i])
             
+    print(bleached_list)
+    
     bleached_list = list(zip(*bleached_list)[::-1])
     print("removed " + str(len(cleaned_list) - len(bleached_list)) + " columns.")
+    unpack_Tuple(bleached_list)    
+    
     return bleached_list
+
+def unpack_Tuple(l):
+    for i in range(len(l)):
+        l[i] = list(l[i])
 
 def printL(l):
     s = ""
@@ -80,3 +98,9 @@ def normaliser_bdd(dataset, mini, maxi):
 # Permet d'effectuer une analyse en composante principale pour réduire la dimension
 def analyse_composante_principale(dataset):
 	return PCA(dataset)
+
+l = [[1, 0, 3],[4, 0, 7],[5, 0, 9]]
+a = loadD.loadData("Starting_Kit/public_data/cifar10_train.data")
+#print(a.getData())
+
+print(nettoyer_bdd(l, 3))
