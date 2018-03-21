@@ -6,25 +6,11 @@ from sklearn.base import BaseEstimator
 import numpy as np
 import loadData as loadD
 
-def identity(x): 
+moy = []#256 valeurs, chaque moyenne pour 1 feature (colonne)
+var = []
 
-    return x 
-
-class SimpleTransform(BaseEstimator): 
-
-    def __init__(self, transformer=identity): 
-
-        self.transformer = transformer 
-
-    def fit(self, X, y=None):
-        
-        return X
-
-    def fit_transform(self, X, y=None): 
-        return self.transform(X) 
-
-    def transform(self, X, y=None): 
-        return np.array([self.transformer(x) for x in X], ndmin=2).T 
+def identity(X, num_f): 
+    return X 
 
 # Pour nettoyer le dataset des entrées incomplètes, INUTILE toutes les données sont completes
 def nettoyer_bdd(dataset, num_f):
@@ -69,6 +55,19 @@ def unpack_Tuple(l):
     for i in range(len(l)):
         l[i] = list(l[i])
 
+def calcul_Moy_Var(l):
+    global moy, var    
+    l = list(zip(*reversed(l)))
+    unpack_Tuple(l)
+    
+    for i in range(len(l)):
+        (v, m) = variance(l[i])
+        moy.append(m)
+        var.append(v)
+            
+    l = list(zip(*l)[::-1])
+    unpack_Tuple(l)
+
 def moyenne(l):
     s = 0
     for i in range(len(l)):
@@ -83,11 +82,12 @@ def variance(l):
     return ((1 / float(len(l))) * s, m)
 
 def normaliser(l):
+    global moy, var
     l = list(zip(*reversed(l)))
     unpack_Tuple(l)
     
     for i in range(len(l)):
-        (v, m) = variance(l[i])
+        (v, m) = (var[i], moy[i])
         for j in range(len(l)):
             l[i][j] = (l[i][j] - m) / (10**-5 + np.sqrt(v))
             
@@ -133,6 +133,18 @@ def normaliser_bdd(dataset, mini, maxi):
 # Permet d'effectuer une analyse en composante principale pour réduire la dimension
 def analyse_composante_principale(dataset):
 	return PCA(dataset)
+
+
+class SimpleTransform(BaseEstimator): 
+    def fit(self, X, y=None):
+        calcul_Moy_Var(X)
+
+    def fit_transform(self, X, y=None): 
+        self.fit(X, y)        
+        return self.transform(X, y) 
+
+    def transform(self, X, y=None):         
+        return normaliser(X)
 
 l = [[1, 0, 3],[4, 0, 7],[5, 0, 9]]
 l2 = [1, 2]
