@@ -3,31 +3,14 @@
 Ceci est reserve au preprocesseurs
 """
 from sklearn.base import BaseEstimator 
+import numpy as np
 import loadData as loadD
 
-def identity(x): 
+moy = []#256 valeurs, chaque moyenne pour 1 feature (colonne)
+var = []
 
-    return x 
-
-class SimpleTransform(BaseEstimator): 
-
-    def __init__(self, transformer=identity): 
-
-        self.transformer = transformer 
-
-    def fit(self, X, y=None): 
-
-        return self 
-
-    def fit_transform(self, X, y=None): 
-
-        return self.transform(X) 
-
-    def transform(self, X, y=None): 
-
-        return np.array([self.transformer(x) for x 
-
-in X], ndmin=2).T 
+def identity(X, num_f): 
+    return X 
 
 # Pour nettoyer le dataset des entrées incomplètes, INUTILE toutes les données sont completes
 def nettoyer_bdd(dataset, num_f):
@@ -62,6 +45,7 @@ def nettoyer_bdd(dataset, num_f):
     print(bleached_list)
     
     bleached_list = list(zip(*bleached_list)[::-1])
+    
     print("removed " + str(len(cleaned_list) - len(bleached_list)) + " columns.")
     unpack_Tuple(bleached_list)    
     
@@ -71,6 +55,57 @@ def unpack_Tuple(l):
     for i in range(len(l)):
         l[i] = list(l[i])
 
+def calcul_Moy_Var(l):
+    global moy, var    
+    l = list(zip(*reversed(l)))
+    unpack_Tuple(l)
+    
+    for i in range(len(l)):
+        (v, m) = variance(l[i])
+        moy.append(m)
+        var.append(v)
+            
+    l = list(zip(*l)[::-1])
+    unpack_Tuple(l)
+
+def moyenne(l):
+    s = 0
+    for i in range(len(l)):
+        s += l[i]
+    return s / float(len(l))
+    
+def variance(l):
+    m = moyenne(l)
+    s = 0
+    for i in range(len(l)):
+        s += (l[i] - m)**2
+    return ((1 / float(len(l))) * s, m)
+
+def normaliser(l):
+    global moy, var
+    l = list(zip(*reversed(l)))
+    unpack_Tuple(l)
+    
+    for i in range(len(l)):
+        (v, m) = (var[i], moy[i])
+        for j in range(len(l)):
+            l[i][j] = (l[i][j] - m) / (10**-5 + np.sqrt(v))
+            
+    l = list(zip(*l)[::-1])
+    unpack_Tuple(l)
+    return l
+    
+def normaliser_Test(l, epsilon = 0.00005):
+    l = list(zip(*reversed(l)))
+    unpack_Tuple(l)
+    
+    for i in range(len(l)):
+        (v, m) = variance(l[i])
+        print("ligne [", i, "]: ", l[i])
+        print("moy: ", m, " var: ", v)
+        assert abs(m) < epsilon
+        assert abs(v-1) < epsilon or v < epsilon
+            
 def printL(l):
     s = ""
     for i in range(len(l)):
@@ -99,8 +134,24 @@ def normaliser_bdd(dataset, mini, maxi):
 def analyse_composante_principale(dataset):
 	return PCA(dataset)
 
-l = [[1, 0, 3],[4, 0, 7],[5, 0, 9]]
-a = loadD.loadData("Starting_Kit/public_data/cifar10_train.data")
-#print(a.getData())
 
-print(nettoyer_bdd(l, 3))
+class SimpleTransform(BaseEstimator): 
+    def fit(self, X, y=None):
+        calcul_Moy_Var(X)
+
+    def fit_transform(self, X, y=None): 
+        self.fit(X, y)        
+        return self.transform(X, y) 
+
+    def transform(self, X, y=None):         
+        return normaliser(X)
+
+l = [[1, 0, 3],[4, 0, 7],[5, 0, 9]]
+l2 = [1, 2]
+
+#a = loadD.loadData("Starting_Kit/public_data/cifar10_train.data")
+#print(a.getData())
+#print(moyenne(l2))
+#printL(nettoyer_bdd(a.getData(), 256))
+
+normaliser_Test(normaliser(l))
